@@ -11,7 +11,7 @@ data "template_file" "controller-primary" {
     configure_ingress        = var.configure_ingress ? "yes" : "no"
     count                    = var.count_x86
     count_gpu                = var.count_gpu
-    configure_kubeflow       = var.nvidia_operator ? "yes" : "no"
+    configure_kubeflow       = var.configure_kubeflow ? "yes" : "no"
     storage                  = var.storage
     configure_network        = var.configure_network ? "yes" : "no"
     skip_workloads           = var.skip_workloads ? "yes" : "no"

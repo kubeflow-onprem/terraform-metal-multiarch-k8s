@@ -217,16 +217,16 @@ function setup_argocd {
   cd /root/on-prem && \
   curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash && \
   chmod +x kustomize && mv kustomize /usr/local/bin && \
-  git clone https://github.com/argoflow/argoflow.git && \
+  git clone https://github.com/argoflow/argoflow.git
 }
 
 function setup_kubectl_bc {
   echo "Installing bash completion..." && \
   apt-get install bash-completion -y && \
   echo 'source /usr/share/bash-completion/bash_completion' >> /root/.bashrc && \
-  echo 'source <(kubectl completion bash)' >>/root/.bashrc && \
-  echo 'alias k=kubectl' >>~/.bashrc && \
-  echo 'complete -F __start_kubectl k' >>~/.bashrc  
+  echo 'source <(kubectl completion bash)' >> /root/.bashrc && \
+  echo 'alias k=kubectl' >> /root/.bashrc && \
+  echo 'complete -F __start_kubectl k' >> /root/.bashrc  
 }
 
 function apply_workloads {
@@ -253,6 +253,7 @@ else
   echo "Writing config for control plane nodes..." ; \
   init_cluster_config
 fi
+mkdir /root/kube
 #metal_csi_config && \
 #sleep 180 && \
 if [ "${configure_network}" = "no" ]; then
@@ -269,10 +270,10 @@ fi
 if [ "${count_gpu}" = "0" ]; then
   echo "Skipping GPU enable..."
 else
-  gpu_enable
+  #gpu_enable
   gpu_config
 fi
-if [ "${configure_kubeflow}" = "yes"]; then
+if [ "${configure_kubeflow}" = "yes" ]; then
   echo "Configuring ArgoFlow..." ; \
   setup_argocd && \
   cd argoflow && \
