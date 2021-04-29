@@ -84,7 +84,7 @@ function gpu_config {
 	#kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta/nvidia-device-plugin.yml
 
   helm repo add nvidia https://nvidia.github.io/gpu-operator && helm repo update
-  helm install --wait --generate-name nvidia/gpu-operator
+  helm install --kubeconfig=/etc/kubernetes/admin.conf --wait --generate-name nvidia/gpu-operator
   fi
 }
 
@@ -277,7 +277,7 @@ if [ "${configure_kubeflow}" = "yes" ]; then
   echo "Configuring ArgoFlow..." ; \
   setup_argocd && \
   cd argoflow && \
-  kustomize build argocd/ | kubectl apply -f - && \
+  kustomize build argocd/ | kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f - && \
   sleep 60 && \
   echo "Configuring Bash Complete" && \
   setup_kubectl_bc
