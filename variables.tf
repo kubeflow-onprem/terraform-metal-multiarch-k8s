@@ -109,3 +109,9 @@ variable "control_plane_node_count" {
   description = "Number of control plane nodes (in addition to the primary controller)"
   default     = 0
 }
+
+variable "configure_kubeflow" {
+  type        = bool
+  description = "Install ArgoFlow."
+  default     = false
+}

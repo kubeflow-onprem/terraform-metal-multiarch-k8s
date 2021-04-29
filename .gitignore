@@ -4,3 +4,6 @@
 *.tfvars
 examples/inventory.yaml
 examples/main.retry
+.DS_Store
+modules/.DS_Store
+modules/controller_pool/.DS_Store

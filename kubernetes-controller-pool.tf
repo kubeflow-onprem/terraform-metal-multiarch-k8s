@@ -41,6 +41,7 @@ module "controllers" {
   kubernetes_version       = var.kubernetes_version
   count_x86                = var.count_x86
   count_gpu                = var.count_gpu
+  configure_kubeflow       = var.configure_kubeflow
   plan_primary             = var.plan_primary
   facility                 = var.facility
   cluster_name             = var.cluster_name

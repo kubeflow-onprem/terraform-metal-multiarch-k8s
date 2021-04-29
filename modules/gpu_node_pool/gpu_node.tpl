@@ -10,7 +10,11 @@ function nvidia_configure() {
  sudo apt-get update && sudo apt-get install -y nvidia-docker2 nvidia-cuda-toolkit ; \
  sudo systemctl restart docker
 }
-
+function blacklist_nouveau() {
+  sudo tee /etc/modprobe.d/blacklist-nouveau.conf <<< "blacklist nouveau" \
+  && sudo tee -a /etc/modprobe.d/blacklist-nouveau.conf <<< "options nouveau modeset=0" && \
+  sudo update-initramfs -u
+}
 function nvidia_drivers() {
   sudo sed -i 's/^#root/root/' /etc/nvidia-container-runtime/config.toml && \
   sudo tee /etc/modules-load.d/ipmi.conf <<< "ipmi_msghandler" \
@@ -69,10 +73,11 @@ function join_cluster() {
 }
 
 install_docker && \
-nvidia_configure && \
-nvidia_drivers && \
+#nvidia_configure && \
+#nvidia_drivers && \
+blacklist_nouveau && \
 enable_docker && \
-update_docker_daemon && \
+#update_docker_daemon && \
 systemctl restart docker && \
 if [ "${storage}" = "ceph" ]; then
   ceph_pre_check

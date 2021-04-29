@@ -26,6 +26,10 @@ function install_kube_tools {
  echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
  apt-get update
  apt-get install -y kubelet=${kube_version} kubeadm=${kube_version} kubectl=${kube_version}
+ echo "Installing helm..." ; \
+ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 \
+   && chmod 700 get_helm.sh \
+   && ./get_helm.sh
 }
 
 function init_cluster_config {
@@ -66,7 +70,8 @@ function init_cluster {
 
 function configure_network {
   if [ "${network}" = "calico" ]; then
-      kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f https://docs.projectcalico.org/v3.14/manifests/calico.yaml
+      kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+      kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f https://docs.projectcalico.org/manifests/custom-resources.yaml
   else
       kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/coreos/flannel/2140ac876ef134e0ed5af15c65e414cf26827915/Documentation/kube-flannel.yml
   fi
@@ -76,7 +81,10 @@ function gpu_config {
   if [ "${count_gpu}" = "0" ]; then
 	echo "No GPU nodes to prepare for presently...moving on..."
   else
-	kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta/nvidia-device-plugin.yml
+	#kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta/nvidia-device-plugin.yml
+
+  helm repo add nvidia https://nvidia.github.io/gpu-operator && helm repo update
+  helm install --wait --generate-name nvidia/gpu-operator
   fi
 }
 
@@ -84,17 +92,23 @@ function metal_lb {
     echo "Configuring MetalLB for ${metal_network_cidr}..." && \
     cat << EOF > /root/kube/metal_lb.yaml
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  namespace: metallb-system
-  name: config
 data:
   config: |
+    peers:
+    - peer-address: 10.32.38.0
+      peer-asn: 65530
+      my-asn: 65480
     address-pools:
-    - name: metal-network
-      protocol: layer2
+    - name: default
+      protocol: bgp
       addresses:
-      - ${metal_network_cidr}
+      - 139.178.85.80/30
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: metallb
+  name: config
+  namespace: metallb-system
 EOF
 }
 
@@ -197,15 +211,33 @@ acert="/etc/kubernetes/pki/etcd/ca.crt" get /registry/secrets/default/personal-s
   sed -i 's|    volumeMounts:|    volumeMounts:\n    - mountPath: /etc/kubernetes/secrets.conf\n      name: secretconfig\n      readOnly: true|g' /etc/kubernetes/manifests/kube-apiserver.yaml 
 }
 
+function setup_argocd {
+  echo "Installing kustomize..." && \
+  mkdir /root/on-prem && \
+  cd /root/on-prem && \
+  curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash && \
+  chmod +x kustomize && mv kustomize /usr/local/bin && \
+  git clone https://github.com/argoflow/argoflow.git && \
+}
+
+function setup_kubectl_bc {
+  echo "Installing bash completion..." && \
+  apt-get install bash-completion -y && \
+  echo 'source /usr/share/bash-completion/bash_completion' >> /root/.bashrc && \
+  echo 'source <(kubectl completion bash)' >>/root/.bashrc && \
+  echo 'alias k=kubectl' >>~/.bashrc && \
+  echo 'complete -F __start_kubectl k' >>~/.bashrc  
+}
+
 function apply_workloads {
   echo "Applying workloads..." && \
 	cd /root/kube && \
 	kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f metal-config.yaml && \
-        kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f https://raw.githubusercontent.com/packethost/csi-packet/master/deploy/kubernetes/setup.yaml && \
-        kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f https://raw.githubusercontent.com/packethost/csi-packet/master/deploy/kubernetes/node.yaml && \
-        kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f https://raw.githubusercontent.com/packethost/csi-packet/master/deploy/kubernetes/controller.yaml && \ 
-	kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/google/metallb/v0.9.3/manifests/namespace.yaml && \
-	kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/google/metallb/v0.9.3/manifests/metallb.yaml && \
+#        kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f https://raw.githubusercontent.com/packethost/csi-packet/master/deploy/kubernetes/setup.yaml && \
+#        kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f https://raw.githubusercontent.com/packethost/csi-packet/master/deploy/kubernetes/node.yaml && \
+#        kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f https://raw.githubusercontent.com/packethost/csi-packet/master/deploy/kubernetes/controller.yaml && \ 
+	kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/google/metallb/v0.9.6/manifests/namespace.yaml && \
+	kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/google/metallb/v0.9.6/manifests/metallb.yaml && \
 	kubectl --kubeconfig=/etc/kubernetes/admin.conf create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)" && \
         kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f metal_lb.yaml
 }
@@ -221,8 +253,8 @@ else
   echo "Writing config for control plane nodes..." ; \
   init_cluster_config
 fi
-metal_csi_config && \
-sleep 180 && \
+#metal_csi_config && \
+#sleep 180 && \
 if [ "${configure_network}" = "no" ]; then
   echo "Not configuring network"
 else
@@ -238,7 +270,17 @@ if [ "${count_gpu}" = "0" ]; then
   echo "Skipping GPU enable..."
 else
   gpu_enable
+  gpu_config
 fi
+if [ "${configure_kubeflow}" = "yes"]; then
+  echo "Configuring ArgoFlow..." ; \
+  setup_argocd && \
+  cd argoflow && \
+  kustomize build argocd/ | kubectl apply -f - && \
+  sleep 60 && \
+  echo "Configuring Bash Complete" && \
+  setup_kubectl_bc
+fi 
 if [ "${storage}" = "openebs" ]; then
    kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f https://openebs.github.io/charts/openebs-operator-1.2.0.yaml
 elif [ "${storage}" = "ceph" ]; then
