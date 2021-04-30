@@ -225,7 +225,7 @@ function setup_kubectl_bc {
   apt-get install bash-completion -y && \
   echo 'source /usr/share/bash-completion/bash_completion' >> /root/.bashrc && \
   echo 'source <(kubectl completion bash)' >> /root/.bashrc && \
-  echo 'alias k=kubectl' >> /root/.bashrc && \
+  echo "Alias 'k=kubectl --kubeconfig=/etc/kubernetes/admin.conf'" >> /root/.bashrc && \
   echo 'complete -F __start_kubectl k' >> /root/.bashrc  
 }
 
@@ -264,13 +264,14 @@ fi
 if [ "${skip_workloads}" = "yes" ]; then
   echo "Skipping workloads..."
 else
-  apply_workloads && \
-  metal_lb
+  metal_lb && \
+  apply_workloads 
+  echo "Finished Applying workloads..."
 fi
 if [ "${count_gpu}" = "0" ]; then
   echo "Skipping GPU enable..."
 else
-  #gpu_enable
+  gpu_enable
   gpu_config
 fi
 if [ "${configure_kubeflow}" = "yes" ]; then
