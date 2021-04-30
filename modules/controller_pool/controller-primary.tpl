@@ -90,7 +90,7 @@ function gpu_config {
 
 function metal_lb {
     echo "Configuring MetalLB for ${metal_network_cidr}..." && \
-    cat << EOF > /root/kube/metal_lb.yaml
+    cat << EOF > /root/kube/metal_config.yaml
 apiVersion: v1
 data:
   config: |
@@ -225,7 +225,7 @@ function setup_kubectl_bc {
   apt-get install bash-completion -y && \
   echo 'source /usr/share/bash-completion/bash_completion' >> /root/.bashrc && \
   echo 'source <(kubectl completion bash)' >> /root/.bashrc && \
-  echo "Alias 'k=kubectl --kubeconfig=/etc/kubernetes/admin.conf'" >> /root/.bashrc && \
+  echo "alias k='kubectl --kubeconfig=/etc/kubernetes/admin.conf'" >> /root/.bashrc && \
   echo 'complete -F __start_kubectl k' >> /root/.bashrc  
 }
 
@@ -238,8 +238,8 @@ function apply_workloads {
 #        kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f https://raw.githubusercontent.com/packethost/csi-packet/master/deploy/kubernetes/controller.yaml && \ 
 	kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/google/metallb/v0.9.6/manifests/namespace.yaml && \
 	kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/google/metallb/v0.9.6/manifests/metallb.yaml && \
-	kubectl --kubeconfig=/etc/kubernetes/admin.conf create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)" && \
-        kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f metal_lb.yaml
+	kubectl --kubeconfig=/etc/kubernetes/admin.conf create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)" 
+        # kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f metal_lb.yaml
 }
 
 install_docker && \
