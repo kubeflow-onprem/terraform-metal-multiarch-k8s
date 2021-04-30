@@ -217,6 +217,8 @@ function setup_argocd {
   cd /root/on-prem && \
   curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash && \
   chmod +x kustomize && mv kustomize /usr/local/bin && \
+  wget https://github.com/argoproj/argo-cd/releases/download/v2.0.1/argocd-linux-amd64 && \
+  chmod +x argocd-linux-amd64  && mv argocd-linux-amd64  /usr/local/bin/argocd && \
   git clone https://github.com/argoflow/argoflow.git
 }
 
