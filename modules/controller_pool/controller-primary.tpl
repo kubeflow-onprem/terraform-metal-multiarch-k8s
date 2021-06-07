@@ -21,7 +21,8 @@ function enable_docker() {
 function install_kube_tools {
  echo "Installing Kubeadm tools..." ; \
  swapoff -a  && \
- apt-get update && apt-get install -y apt-transport-https
+ apt-get update && apt-get install -y apt-transport-https snapd
+ snap install yq && snap install sealed-secrets-kubeseal-nsg && snap alias sealed-secrets-kubeseal-nsg kubeseal
  curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
  echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
  apt-get update

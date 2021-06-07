@@ -1,0 +1,19 @@
+
+
+"bgp_neighbors": [
+    {
+      "address_family": 4,
+      "customer_as": 65000,
+      "customer_ip": "10.32.38.1",
+      "md5_enabled": false,
+      "md5_password": null,
+      "multihop": false,
+      "peer_as": 65530,
+      "peer_ips": [
+        "10.32.38.0"
+      ],
+
+      ApM1uIzm#I!y!U
+
+
+      9n9Gtrd$byhxW
