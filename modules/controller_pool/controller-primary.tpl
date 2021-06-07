@@ -22,8 +22,6 @@ function install_kube_tools {
  echo "Installing Kubeadm tools..." ; \
  swapoff -a  && \
  apt-get update && apt-get install -y apt-transport-https 
- echo "Installing snapd"
- apt install -y snapd
  echo "Installing yq and kubeseal"
  snap install yq && snap install sealed-secrets-kubeseal-nsg && snap alias sealed-secrets-kubeseal-nsg kubeseal
  curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
