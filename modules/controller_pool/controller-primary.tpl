@@ -44,6 +44,12 @@ function init_cluster_config {
       cat << EOF > /etc/kubeadm-config.yaml
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: InitConfiguration
+nodeRegistration:
+  kubeletExtraArgs:
+    cloud-provider: "external"
+localAPIEndpoint:
+  advertiseAddress: ${kubernetes_lb_block%%:*}
+  bindPort: ${kubernetes_lb_block##*:}
 bootstrapTokens:
 - token: "${kube_token}"
   description: "default kubeadm bootstrap token"
