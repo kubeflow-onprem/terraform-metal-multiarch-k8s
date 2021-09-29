@@ -44,6 +44,8 @@ jobs:
       run:  echo "TF_VAR_cluster_name=tfacc-${SHORT_SHA}" >> $GITHUB_ENV
     - name: Terraform Vars - Project ID
       run: echo "TF_VAR_project_id=${{ secrets.METAL_PROJECT_ID }}" >> $GITHUB_ENV
+    - name: Terraform Vars - Create New Project (false)
+      run: echo "TF_VAR_metal_create_project=false" >> $GITHUB_ENV
     - name: Terraform Plan
       id: plan
       timeout-minutes: 45
